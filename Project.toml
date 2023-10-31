@@ -1,0 +1,13 @@
+name = "Tryparse"
+uuid = "7b412df5-33c1-4334-b65f-95ccdd546b1c"
+authors = ["Tommy Hofmann <thofma@gmail.com> and contributors"]
+version = "1.0.0-DEV"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
