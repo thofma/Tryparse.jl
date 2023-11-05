@@ -55,9 +55,9 @@ Table of supported types as well as allowed syntax.
 | `<: Number` | Any arithmetic expression involving `^` | `Tryparse.tryparse(BigInt, "10^100") == big(10)^100` |
 | `<: Tuple` | Expressions of the form `(...)` | `Tryparse.tryparse(Tuple{Int, Float64}, "(1, 1.2)" == (1, 1.2)` |
 | `<: Vector` | Expressions of the form `[...]` | `Tryparse.tryparse(Vector{Int}, "[2,1+1,3") == [2,2,3]` |
-| `<: Matrix` | Expressions of the form `[...;...]` | `Tryparse.parse(Matrix{Int}, "[1 2; 3 4]") == [1 2; 3 4]` |
-| `<: UnitRange` | Expressions of the form `...:...` | `Tryparse.parse(UnitRange{Int}, "1:10") == 1:10` |
-| `<: StepRange` | Expressions of the form `...:...:...` | `Tryparse.parse(StepRange{Int}, "2:-1:-10") == 2:-1:-10` |
+| `<: Matrix` | Expressions of the form `[...;...]` | `Tryparse.tryparse(Matrix{Int}, "[1 2; 3 4]") == [1 2; 3 4]` |
+| `<: UnitRange` | Expressions of the form `...:...` | `Tryparse.tryparse(UnitRange{Int}, "1:10") == 1:10` |
+| `<: StepRange` | Expressions of the form `...:...:...` | `Tryparse.tryparse(StepRange{Int}, "2:-1:-10") == 2:-1:-10` |
 
 the types can be nested arbitrarily:
 
@@ -101,6 +101,3 @@ and one can specifiy what the types of `arg1` and `arg2`. But this will work onl
 /path> julia script.jl --opt1=10^10 --opt2=[2,3]
 ```
 would not work, whereas this is possible with `Tryparse`.
-
-
-
