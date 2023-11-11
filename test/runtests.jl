@@ -138,6 +138,7 @@ ParseError = Tryparse.ParseError
 
   @test tryparse(Matrix{Int}, "[1, 2; 1, 2, 3]") === nothing
   @test_throws ParseError parse(Matrix{Int}, "[1, 2; 1, 2, 3]")
+  @test_throws ParseError parse(Matrix{Int}, "[1  2; 1  2  3]")
   @test tryparse(Matrix{Int}, "[1, 2]") === nothing
   @test_throws ParseError parse(Matrix{Int}, "[1, 2]")
 
@@ -210,4 +211,5 @@ ParseError = Tryparse.ParseError
   @test_throws ErrorException Tryparse.tryparse_override(Array)
   Tryparse.@override_base BigInt
   @test Base.tryparse(BigInt, "2^2") == 4
+  Tryparse.@override_base 
 end
