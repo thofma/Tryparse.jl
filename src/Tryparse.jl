@@ -209,11 +209,8 @@ function parse(T::Type, s)
     try
       return T(r)
     catch e
-      if e isa InexactError
-        rethrow(ParseError("Cannot convert \"$(s)\" to type $(T)"))
-      else
-        rethrow(e)
-      end
+      @assert  e isa InexactError # else rethrow(e)
+      rethrow(ParseError("Cannot convert \"$(s)\" to type $(T)"))
     end
   else
     return r
@@ -223,7 +220,7 @@ end
 #
 const POSSIBLE_TYPES = [Number, Vector, Tuple, Matrix, UnitRange, StepRange]
 
-const try_parse_override = Dict{Any, Any}()
+const TRYPARSE_OVERRIDE = Dict{Any, Any}()
 
 macro override(s...)
   args = []
@@ -248,13 +245,12 @@ function tryparse_override(types = POSSIBLE_TYPES)
           Possible types are $(POSSIBLE_TYPES).
           """)
   end
-
-    try_parse_override[T] = true
+    TRYPARSE_OVERRIDE[T] = true
   end
   nothing
 end
 
-is_overwritten(T) = any(T <: S for (S, fl) in try_parse_override if fl)
+is_overridden(T) = any(T <: S for (S, fl) in TRYPARSE_OVERRIDE if fl)
 
 ################################################################################
 #

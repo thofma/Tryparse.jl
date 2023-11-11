@@ -91,6 +91,25 @@ ParseError = Tryparse.ParseError
 
   @test_throws ParseError parse(Vector{Int}, "[i for i in 1:10]")
 
+  # Tuple
+  x = tryparse(Tuple{Int}, "(1,)")
+  @test x isa Tuple{Int} && x == (1,)
+  x = parse(Tuple{Int}, "(1,)")
+  @test x isa Tuple{Int} && x == (1,)
+
+  x = tryparse(Tuple{Int, Int}, "(1,2^10)")
+  @test x isa Tuple{Int, Int} && x == (1, 2^10)
+  x = parse(Tuple{Int, Int}, "(1,2^10)")
+  @test x isa Tuple{Int, Int} && x == (1, 2^10)
+
+  x = tryparse(Tuple{Int, BigInt}, "(1,2^100)")
+  @test x isa Tuple{Int, BigInt} && x == (1, big(2)^100)
+
+  @test tryparse(Tuple{Int}, "1") === nothing
+  @test_throws ParseError parse(Tuple{Int}, "1")
+  @test tryparse(Tuple{Int, Int}, "(1,2") === nothing
+  @test_throws ParseError parse(Tuple{Int, Int}, "[1,2")
+
   # Matrix
   x = tryparse(Matrix{Int}, "[1 2;]")
   @test x isa Matrix{Int} && x == [1 2;]
@@ -116,6 +135,11 @@ ParseError = Tryparse.ParseError
   @test x isa Matrix{BigInt} && x == [1 2; big(2)^100 4; 5 6]
   x = parse(Matrix{BigInt}, "[1 2; 2^100 4; 5 6]")
   @test x isa Matrix{BigInt} && x == [1 2; big(2)^100 4; 5 6]
+
+  @test tryparse(Matrix{Int}, "[1, 2; 1, 2, 3]") === nothing
+  @test_throws ParseError parse(Matrix{Int}, "[1, 2; 1, 2, 3]")
+  @test tryparse(Matrix{Int}, "[1, 2]") === nothing
+  @test_throws ParseError parse(Matrix{Int}, "[1, 2]")
 
   # UnitRange
   x = tryparse(UnitRange{Int}, "1:0")
@@ -175,4 +199,15 @@ ParseError = Tryparse.ParseError
   @test_throws ParseError parse(StepRange{Int}, "[1,2]")
   @test tryparse(StepRange{Int}, "1.2:3.0:5.0") === nothing
   @test_throws ParseError parse(StepRange{Int}, "1.2:3.0:5.0")
+
+  # Overriding
+  
+  @test get(Tryparse.TRYPARSE_OVERRIDE, Int, false) == false
+  @test Tryparse.is_overridden(Int) == false
+  Tryparse.tryparse_override(Int)
+  @test Tryparse.TRYPARSE_OVERRIDE[Int] == true
+  @test Tryparse.is_overridden(Int) == true
+  @test_throws ErrorException Tryparse.tryparse_override(Array)
+  Tryparse.@override_base BigInt
+  @test Base.tryparse(BigInt, "2^2") == 4
 end
