@@ -3,9 +3,20 @@ using Test
 
 tryparse = Tryparse.tryparse
 parse = Tryparse.parse
-ErrorParse = Tryparse.ErrorParse
+ParseError = Tryparse.ParseError
 
 @testset "Tryparse.jl" begin
+  # ParseError
+
+  e = ParseError("test")
+  io = IOBuffer()
+  Base.showerror(io, e)
+  @test String(take!(io)) == "ParseError: test"
+
+  @test_throws ParseError parse("1///1")
+
+  @test Tryparse._tryparse(Int, nothing, false) === nothing
+
   # Int's
   for T in [Int32, Int, Int128, BigInt]
     for (val, str) in [(-1, "-1"), (1, "1"), (2, "1 + 1"), (-7, "1 - 2^3"), (5, "div(10, 2)"), (12, "2 * 3 * 2")]
@@ -22,13 +33,13 @@ ErrorParse = Tryparse.ErrorParse
   @test x isa BigInt && x == big(10)^50
 
   @test tryparse(Int, "1//2") === nothing
-  @test_throws ErrorParse parse(Int, "1//2")
+  @test_throws ParseError parse(Int, "1//2")
   @test tryparse(Int, "1 + ") === nothing
-  @test_throws ErrorParse parse(Int, "1 + ")
+  @test_throws ParseError parse(Int, "1 + ")
   @test tryparse(Int, "1 + (2 + 3") === nothing
-  @test_throws ErrorParse parse(Int, "1 + (2 + 3")
+  @test_throws ParseError parse(Int, "1 + (2 + 3")
   @test tryparse(Int, "sin(2)") === nothing
-  @test_throws ErrorParse parse(Int, "sin(2)")
+  @test_throws ParseError parse(Int, "sin(2)")
 
   # Float's
   for T in [Float32, Float64, BigFloat]
@@ -74,9 +85,11 @@ ErrorParse = Tryparse.ErrorParse
   @test x isa Vector{BigInt} && x == [1, big(2)^100]
 
   @test tryparse(Vector{Int}, "1") === nothing
-  @test_throws ErrorParse parse(Vector{Int}, "1")
+  @test_throws ParseError parse(Vector{Int}, "1")
   @test tryparse(Vector{Int}, "[1,2") === nothing
-  @test_throws ErrorParse parse(Vector{Int}, "[1,2")
+  @test_throws ParseError parse(Vector{Int}, "[1,2")
+
+  @test_throws ParseError parse(Vector{Int}, "[i for i in 1:10]")
 
   # Matrix
   x = tryparse(Matrix{Int}, "[1 2;]")
@@ -126,13 +139,13 @@ ErrorParse = Tryparse.ErrorParse
 #  @test x isa UnitRange{Float64} && x == -1.0:2.0^3
 
   @test tryparse(UnitRange{Int}, "1:0:0") === nothing
-  @test_throws ErrorParse parse(UnitRange{Int}, "1:0:0")
+  @test_throws ParseError parse(UnitRange{Int}, "1:0:0")
   @test tryparse(UnitRange{Int}, "[1,2]") === nothing
-  @test_throws ErrorParse parse(UnitRange{Int}, "[1,2]")
+  @test_throws ParseError parse(UnitRange{Int}, "[1,2]")
   @test tryparse(UnitRange{Int}, "1.2:3.0") === nothing
-  @test_throws ErrorParse parse(UnitRange{Int}, "1.2:3.0")
+  @test_throws ParseError parse(UnitRange{Int}, "1.2:3.0")
   @test tryparse(UnitRange{Int}, "1:3:2") === nothing
-  @test_throws ErrorParse parse(UnitRange{Int}, "1:3:2")
+  @test_throws ParseError parse(UnitRange{Int}, "1:3:2")
 
   # StepRange
   
@@ -157,9 +170,9 @@ ErrorParse = Tryparse.ErrorParse
 #  @test x isa UnitRange{Float64} && x == -1.0:2.0^3
 
   @test tryparse(StepRange{Int}, "1:0") === nothing
-  @test_throws ErrorParse parse(StepRange{Int}, "1:0")
+  @test_throws ParseError parse(StepRange{Int}, "1:0")
   @test tryparse(StepRange{Int}, "[1,2]") === nothing
-  @test_throws ErrorParse parse(StepRange{Int}, "[1,2]")
+  @test_throws ParseError parse(StepRange{Int}, "[1,2]")
   @test tryparse(StepRange{Int}, "1.2:3.0:5.0") === nothing
-  @test_throws ErrorParse parse(StepRange{Int}, "1.2:3.0:5.0")
+  @test_throws ParseError parse(StepRange{Int}, "1.2:3.0:5.0")
 end

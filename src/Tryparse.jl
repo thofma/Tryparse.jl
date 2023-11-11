@@ -6,11 +6,11 @@ function __init__()
     @require_extensions
 end
 
-struct ErrorParse <: Exception
+struct ParseError <: Exception
   msg
 end
 
-function Base.showerror(io::IO, err::ErrorParse)
+function Base.showerror(io::IO, err::ParseError)
   print(io, "ParseError: ")
   print(io, err.msg)
 end
@@ -18,14 +18,11 @@ end
 # Own little parse helper to beautify the error message
 function parse(s)
   try
-    ex = Meta.parse(s)
+    ex = Meta.parse(s, raise = true)
     return ex
   catch e
-    if e isa Meta.ParseError
-      rethrow(ErrorParse("Error while parsing string \"$(s)\": $(e.msg)"))
-    else
-      rethrow(e)
-    end
+    @assert e isa Meta.ParseError
+    rethrow(ParseError("Error while parsing string \"$(s)\": $(e.msg)"))
   end
 end
 
@@ -39,11 +36,8 @@ function tryparse(::Type{T}, s::Union{SubString, String}) where {T <: Number}
     s = T(r)
     return s
   catch e
-    if e isa InexactError
-      nothing
-    else
-      rethrow(e)
-    end
+    @assert e isa InexactError # else rethrow
+    return nothing
   end
 end
 
@@ -58,14 +52,11 @@ function _tryparse(::Type{T}, ex, maythrow = true) where {T <: Number}
       if !maythrow
         return nothing
       end
-      if e isa InexactError
-        rethrow(ErrorParse("Cannot convert \"$(ex)\" to type $(T)"))
-      else
-        rethrow(e)
-      end
+      @assert e isa InexactError # else rethrow(e)
+      rethrow(ParseError("Cannot convert \"$(ex)\" to type $(T)"))
     end
   else
-    !(ex isa Expr) && maythrow && throw(ErrorParse("Unexpected error. Please file a bug report"))
+    !(ex isa Expr) && maythrow && throw(ParseError("Unexpected error. Please file a bug report"))
     if ex.head === :call
       if ex.args[1] === :+
         return reduce(+, _tryparse(T, ex.args[i], maythrow) for i in 2:length(ex.args), init = zero(T))
@@ -80,11 +71,11 @@ function _tryparse(::Type{T}, ex, maythrow = true) where {T <: Number}
             return fun(_tryparse(T, ex.args[2], maythrow), _tryparse(T, ex.args[3], maythrow))
           end
         end
-        maythrow && throw(ErrorParse("Unknown call \"$(ex.args[1])\" while parsing $(T)"))
+        maythrow && throw(ParseError("Unknown call \"$(ex.args[1])\" while parsing $(T)"))
       end
     end
   end
-  maythrow && throw(ErrorParse("Unknown syntax \"$(ex)\" while parsing $(T)"))
+  maythrow && throw(ParseError("Unknown syntax \"$(ex)\" while parsing $(T)"))
   return nothing
 end
 
@@ -101,10 +92,10 @@ function _tryparse(::Type{Vector{T}}, ex, maythrow = true) where {T}
     if ex.head === :vect
       return T[_tryparse(T, a, maythrow) for a in ex.args]
     elseif ex.head === :comprehension
-      maythrow && throw(ErrorParse("List comprehension not supported."))
+      maythrow && throw(ParseError("List comprehension not supported."))
     end
   end
-  maythrow && throw(ErrorParse("Unkown syntax for vector construction. Please use \"[...]\"."))
+  maythrow && throw(ParseError("Unkown syntax for vector construction. Please use \"[...]\"."))
   return nothing
 end
 
@@ -123,7 +114,7 @@ function _tryparse(S::Type{<:Tuple}, ex, maythrow = true)
       return ntuple(i -> _tryparse(fT[i], ex.args[i], maythrow), length(ex.args))
     end
   end
-  maythrow && throw(ErrorParse("Unkown syntax for tuple construction. Please use \"(...)\"."))
+  maythrow && throw(ParseError("Unkown syntax for tuple construction. Please use \"(...)\"."))
   return nothing
 end
 
@@ -141,12 +132,12 @@ function _tryparse(::Type{Matrix{T}}, ex, maythrow = true) where {T}
       nr = length(ex.args)
       nc = length(ex.args[1].args)
       if any(a -> length(a.args) != nc, ex.args)
-        maythrow && throw(ErrorParse("Unequal number of columns"))
+        maythrow && throw(ParseError("Unequal number of columns"))
         return nothing
       end
       M = Matrix{T}(undef, nr, nc)
       for (i, a) in enumerate(ex.args)
-        a.head !== :row && maythrow && throw(ErrorParse("Unexpected error. Please file a bug report"))
+        a.head !== :row && maythrow && throw(ParseError("Unexpected error. Please file a bug report"))
         for (j, v) in enumerate(a.args)
           M[i, j] = _tryparse(T, v, maythrow)
         end
@@ -154,7 +145,7 @@ function _tryparse(::Type{Matrix{T}}, ex, maythrow = true) where {T}
       return M
     end
   end
-  maythrow && throw(ErrorParse("Unkown syntax for matrix construction. Please use \"[...;...]\"."))
+  maythrow && throw(ParseError("Unkown syntax for matrix construction. Please use \"[...;...]\"."))
   return nothing
 end
 
@@ -180,7 +171,7 @@ function _tryparse(::Type{UnitRange{T}}, ex, maythrow = true) where {T}
       end
     end
   end
-  maythrow && throw(ErrorParse("Unkown syntax \"$(ex)\" for unit range construction. Please use \"...:...\"."))
+  maythrow && throw(ParseError("Unkown syntax \"$(ex)\" for unit range construction. Please use \"...:...\"."))
   return nothing
 end
 
@@ -207,7 +198,7 @@ function _tryparse(::Type{StepRange{T}}, ex, maythrow = true) where {T}
       end
     end
   end
-  maythrow && throw(ErrorParse("Unkown syntax \"$(ex)\" for step range construction. Please use \"...:...:...\"."))
+  maythrow && throw(ParseError("Unkown syntax \"$(ex)\" for step range construction. Please use \"...:...:...\"."))
   return nothing
 end
 
@@ -219,7 +210,7 @@ function parse(T::Type, s)
       return T(r)
     catch e
       if e isa InexactError
-        rethrow(ErrorParse("Cannot convert \"$(s)\" to type $(T)"))
+        rethrow(ParseError("Cannot convert \"$(s)\" to type $(T)"))
       else
         rethrow(e)
       end
@@ -265,8 +256,23 @@ end
 
 is_overwritten(T) = any(T <: S for (S, fl) in try_parse_override if fl)
 
-macro override_base(type)
-  esc(:(Base.tryparse(::Type{$type}, y::AbstractString) = Tryparse.tryparse($type, y)))
+################################################################################
+#
+#  Overriding Base.tryparse
+#
+################################################################################
+
+macro override_base(types...)
+  if length(types) == 1
+    types = [types[1]]
+  elseif length(types) == 0
+    types = [Symbol(T) for T in Tryparse.POSSIBLE_TYPES]
+  end
+  args = []
+  for type in types
+    push!(args, esc(:(Base.tryparse(::Type{S}, y::AbstractString) where {S <: $type} = Tryparse.tryparse(S, y))))
+  end
+  return Expr(:block, args...)
 end
 
 end
