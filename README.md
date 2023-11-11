@@ -30,9 +30,9 @@ julia> Tryparse.tryparse(Int, "2 + 3^2 - 2 * 3")
 
 ## Installation
 
-Since Tally.jl is a registered package, it can be simply installed as follows:
+Since Tryparse.jl is a registered package, it can be simply installed as follows:
 ```julia
-julia> using Pkg; Pkg.install("Tally")
+julia> using Pkg; Pkg.install("Tryparse")
 ```
 
 ## Usage
