@@ -1,5 +1,11 @@
 module Tryparse
 
+using PackageExtensionCompat
+
+function __init__()
+    @require_extensions
+end
+
 struct ErrorParse <: Exception
   msg
 end
@@ -42,6 +48,9 @@ function tryparse(::Type{T}, s::Union{SubString, String}) where {T <: Number}
 end
 
 function _tryparse(::Type{T}, ex, maythrow = true) where {T <: Number}
+  if ex === nothing
+    return nothing
+  end
   if ex isa T || ex isa Number # parse also 2.0^3
     try
       return T(ex)
@@ -218,6 +227,46 @@ function parse(T::Type, s)
   else
     return r
   end
+end
+
+#
+const POSSIBLE_TYPES = [Number, Vector, Tuple, Matrix, UnitRange, StepRange]
+
+const try_parse_override = Dict{Any, Any}()
+
+macro override(s...)
+  args = []
+  if length(s) == 0
+    return :(tryparse_override())
+  end
+  for i in 1:length(s)
+    push!(args, :(tryparse_override($(s[i]))))
+  end
+  return Expr(:block, args...)
+end
+
+function tryparse_override(type::Type)
+  return tryparse_override([type])
+end
+
+function tryparse_override(types = POSSIBLE_TYPES)
+  for T in types
+    if all(!(T <: S) for S in POSSIBLE_TYPES)
+    error("""
+          Cannot override parsing for type $(T).
+          Possible types are $(POSSIBLE_TYPES).
+          """)
+  end
+
+    try_parse_override[T] = true
+  end
+  nothing
+end
+
+is_overwritten(T) = any(T <: S for (S, fl) in try_parse_override if fl)
+
+macro override_base(type)
+  esc(:(Base.tryparse(::Type{$type}, y::AbstractString) = Tryparse.tryparse($type, y)))
 end
 
 end

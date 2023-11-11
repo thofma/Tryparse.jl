@@ -1,13 +1,29 @@
 name = "Tryparse"
 uuid = "7b412df5-33c1-4334-b65f-95ccdd546b1c"
-authors = ["Tommy Hofmann <thofma@gmail.com> and contributors"]
-version = "1.0.0-DEV"
+authors = ["Tommy Hofmann <thofma@gmail.com>"]
+version = "0.1.0-DEV"
+
+[deps]
+PackageExtensionCompat = "65ce6f38-6b18-4e1d-a461-8949797d7930"
+
+[weakdeps]
+ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
+ArgMacros = "dbc42088-9de8-42a0-8ec8-2cd114e1ea3e"
+
+[extensions]
+ArgParseExt = "ArgParse"
+ArgMacrosExt = "ArgMacros"
 
 [compat]
 julia = "1"
+PackageExtensionCompat = "1"
+ArgParse = "1"
+ArgMacros = "^0.2"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
+ArgMacros = "dbc42088-9de8-42a0-8ec8-2cd114e1ea3e"
 
 [targets]
 test = ["Test"]
