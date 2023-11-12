@@ -12,15 +12,14 @@ for Typ in Tryparse.POSSIBLE_TYPES
       if Tryparse.is_overridden(T)
         return Tryparse.parse(T, x)
       else
-        local r::T
         try
           r = ArgParse.parse_item(T, x)
+          return r::T
         catch err
           ArgParse.argparse_error("""
                                   invalid argument: $x (conversion to type $T failed; you may need to overload
                                   ArgParse.parse_item; the error was: $err)""")
         end
-        return r
       end
     end
   end
