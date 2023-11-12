@@ -103,7 +103,11 @@ end
 # Tuple
 
 function _tryparse(S::Type{<:Tuple}, ex, maythrow = true) 
-  fT = fieldtypes(S)
+  if VERSION >= v"1.1"
+    fT = fieldtypes(S)
+  else
+    fT = [S.parameters[i] for i in 1:length(S.parameters)]
+  end
   if ex isa Expr
     if ex.head === :tuple
       return ntuple(i -> _tryparse(fT[i], ex.args[i], maythrow), length(ex.args))
@@ -255,7 +259,14 @@ macro override_base(types...)
   end
   args = []
   for type in types
-    push!(args, esc(:(Base.tryparse(::Type{S}, y::AbstractString) where {S <: $type} = Tryparse.tryparse(S, y))))
+    if VERSION <= v"1.1" &&  type === Symbol(Array{T, 1} where {T})
+      push!(args, esc(:(Base.tryparse(::Type{Vector{S}}, y::AbstractString) where {S} = Tryparse.tryparse(Vector{S}, y))))
+    elseif VERSION <= v"1.1" &&  type === Symbol(Array{T, 2} where {T})
+      push!(args, esc(:(Base.tryparse(::Type{Matrix{S}}, y::AbstractString) where {S} = Tryparse.tryparse(Matrix{S}, y))))
+
+    else
+      push!(args, esc(:(Base.tryparse(::Type{S}, y::AbstractString) where {S <: $type} = Tryparse.tryparse(S, y))))
+    end
   end
   return Expr(:block, args...)
 end

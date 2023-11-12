@@ -246,6 +246,8 @@ if _with_argparse
   end
 end
 
+_with_argmacros = false
+
 try
   using ArgMacros
   @info("Found ArgMacros. Testing extension functionality")
@@ -269,6 +271,8 @@ if _with_argmacros
     Tryparse.@unoverride
   end
 end
+
+_with_nemo = false
 
 try
   using Nemo
