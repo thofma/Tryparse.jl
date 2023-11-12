@@ -284,29 +284,29 @@ end
 
 if _with_nemo
   @testset "Nemo" begin
-    x = tryparse(ZZRingElem, "10^50")
-    @test x isa ZZRingElem && x == big(10)^50
+    x = tryparse(fmpz, "10^50")
+    @test x isa fmpz && x == big(10)^50
 
-    @test tryparse(ZZRingElem, "1//2") === nothing
-    @test_throws ParseError parse(ZZRingElem, "1//2")
-    @test tryparse(ZZRingElem, "1 + ") === nothing
-    @test_throws ParseError parse(ZZRingElem, "1 + ")
-    @test tryparse(ZZRingElem, "1 + (2 + 3") === nothing
-    @test_throws ParseError parse(ZZRingElem, "1 + (2 + 3")
-    @test tryparse(ZZRingElem, "sin(2)") === nothing
-    @test_throws ParseError parse(ZZRingElem, "sin(2)")
+    @test tryparse(fmpz, "1//2") === nothing
+    @test_throws ParseError parse(fmpz, "1//2")
+    @test tryparse(fmpz, "1 + ") === nothing
+    @test_throws ParseError parse(fmpz, "1 + ")
+    @test tryparse(fmpz, "1 + (2 + 3") === nothing
+    @test_throws ParseError parse(fmpz, "1 + (2 + 3")
+    @test tryparse(fmpz, "sin(2)") === nothing
+    @test_throws ParseError parse(fmpz, "sin(2)")
 
     for (val, str) in [(1, "1"), (2, "1 + 1"), (-7, "1 - 2^3"), (5, "10//2"), (12, "2 * 3 * 2"), (3//4, "(3//2)//(2//1)")]
-      x = tryparse(QQFieldElem, str)
-      @test x isa QQFieldElem
+      x = tryparse(fmpq, str)
+      @test x isa fmpq
       @test x == val
-      y = parse(QQFieldElem, str)
-      @test y isa QQFieldElem
+      y = parse(fmpq, str)
+      @test y isa fmpq
       @test y == val
     end
 
-    @test tryparse(QQFieldElem, "sin(2)") === nothing
-    @test_throws ParseError parse(QQFieldElem, "sin(2)")
+    @test tryparse(fmpq, "sin(2)") === nothing
+    @test_throws ParseError parse(fmpq, "sin(2)")
   end
 end
 
