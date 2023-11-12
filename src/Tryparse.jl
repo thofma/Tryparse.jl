@@ -259,9 +259,9 @@ macro override_base(types...)
   end
   args = []
   for type in types
-    if VERSION <= v"1.1" &&  type === Symbol(Array{T, 1} where {T})
+    if VERSION < v"1.7" && (type === Symbol(Array{T, 1} where {T}) || type === Symbol(Vector))
       push!(args, esc(:(Base.tryparse(::Type{Vector{S}}, y::AbstractString) where {S} = Tryparse.tryparse(Vector{S}, y))))
-    elseif VERSION <= v"1.1" &&  type === Symbol(Array{T, 2} where {T})
+    elseif VERSION < v"1.7" && (type === Symbol(Array{T, 2} where {T}) || type === Symbol(Matrix))
       push!(args, esc(:(Base.tryparse(::Type{Matrix{S}}, y::AbstractString) where {S} = Tryparse.tryparse(Matrix{S}, y))))
 
     else
