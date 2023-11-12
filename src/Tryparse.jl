@@ -26,6 +26,13 @@ function parse(s)
   end
 end
 
+# Fallback
+function tryparse(::Type{T}, s::Union{SubString, String}) where {T}
+  ex = parse(s)
+  r = _tryparse(T, ex, false)
+  return r
+end
+
 # Parse expression for numbers
 function tryparse(::Type{T}, s::Union{SubString, String}) where {T <: Number}
   ex = parse(s)
@@ -61,14 +68,15 @@ function _tryparse(::Type{T}, ex, maythrow = true) where {T <: Number}
       if ex.args[1] === :+
         return reduce(+, _tryparse(T, ex.args[i], maythrow) for i in 2:length(ex.args), init = zero(T))
       elseif ex.args[1] === :-
-        return reduce(-, _tryparse(T, ex.args[i], maythrow) for i in 2:length(ex.args), init = zero(T))
+        z = reduce(-, _tryparse(T, ex.args[i], maythrow) for i in 2:length(ex.args), init = zero(T))
+        return z
       elseif ex.args[1] === :*
         return reduce(*, _tryparse(T, ex.args[i], maythrow) for i in 2:length(ex.args), init = one(T))
       else
         #for (sym, fun) in [(:^, ^), (:/, /), (://, //), (:%, %), (:div, div)]
         for (sym, fun) in [(:^, ^), (:/, /), (://, //), (:%, %), (:div, div)]
           if ex.args[1] === sym
-            return fun(_tryparse(T, ex.args[2], maythrow), _tryparse(T, ex.args[3], maythrow))
+            return fun(_tryparse(T, ex.args[2], maythrow), sym == :^ && ex.args[3] isa Integer ? ex.args[3] : _tryparse(T, ex.args[3], maythrow))
           end
         end
         maythrow && throw(ParseError("Unknown call \"$(ex.args[1])\" while parsing $(T)"))
@@ -79,13 +87,6 @@ function _tryparse(::Type{T}, ex, maythrow = true) where {T <: Number}
   return nothing
 end
 
-# Vector
-function tryparse(::Type{Vector{T}}, s::Union{SubString, String}) where {T}
-  ex = parse(s)
-  r = _tryparse(Vector{T}, ex, false)
-  # there is a chance, that this is an Int
-  return r
-end
 
 function _tryparse(::Type{Vector{T}}, ex, maythrow = true) where {T}
   if ex isa Expr
@@ -100,12 +101,6 @@ function _tryparse(::Type{Vector{T}}, ex, maythrow = true) where {T}
 end
 
 # Tuple
-function tryparse(S::Type{<:Tuple}, s::Union{SubString, String}) 
-  ex = parse(s)
-  r = _tryparse(S, ex, false)
-  # there is a chance, that this is an Int
-  return r
-end
 
 function _tryparse(S::Type{<:Tuple}, ex, maythrow = true) 
   fT = fieldtypes(S)
@@ -119,13 +114,6 @@ function _tryparse(S::Type{<:Tuple}, ex, maythrow = true)
 end
 
 # Matrix
-function tryparse(::Type{Matrix{T}}, s::Union{SubString, String}) where {T}
-  ex = parse(s)
-  r = _tryparse(Matrix{T}, ex, false)
-  # there is a chance, that this is an Int
-  return r
-end
-
 function _tryparse(::Type{Matrix{T}}, ex, maythrow = true) where {T}
   if ex isa Expr
     if ex.head === :vcat
@@ -151,12 +139,6 @@ end
 
 # UnitRange
 
-function tryparse(::Type{UnitRange{T}}, s::Union{SubString, String}) where {T}
-  ex = parse(s)
-  r = _tryparse(UnitRange{T}, ex, false)
-  return r
-end
-
 function _tryparse(::Type{UnitRange{T}}, ex, maythrow = true) where {T}
   if ex isa Expr
     if ex.head === :call
@@ -176,11 +158,6 @@ function _tryparse(::Type{UnitRange{T}}, ex, maythrow = true) where {T}
 end
 
 # Steprange
-function tryparse(::Type{StepRange{T}}, s::Union{SubString, String}) where {T}
-  ex = parse(s)
-  r = _tryparse(StepRange{T}, ex, false)
-  return r
-end
 
 function _tryparse(::Type{StepRange{T}}, ex, maythrow = true) where {T}
   if ex isa Expr
@@ -225,28 +202,40 @@ const TRYPARSE_OVERRIDE = Dict{Any, Any}()
 macro override(s...)
   args = []
   if length(s) == 0
-    return :(tryparse_override())
+    return :(tryparse_set_override(true))
   end
   for i in 1:length(s)
-    push!(args, :(tryparse_override($(s[i]))))
+    push!(args, :(tryparse_set_override(true, $(s[i]))))
   end
   return Expr(:block, args...)
 end
 
-function tryparse_override(type::Type)
-  return tryparse_override([type])
+macro unoverride(s...)
+  args = []
+  if length(s) == 0
+    return :(tryparse_set_override(false))
+  end
+  for i in 1:length(s)
+    push!(args, :(tryparse_set_override(false, $(s[i]))))
+  end
+  return Expr(:block, args...)
 end
 
-function tryparse_override(types = POSSIBLE_TYPES)
+function tryparse_set_override(fl::Bool, type::Type)
+  return tryparse_set_override(fl, [type])
+end
+
+function tryparse_set_override(fl::Bool,
+                               types = unique(vcat(POSSIBLE_TYPES, collect(keys(TRYPARSE_OVERRIDE)))))
   for T in types
     if all(!(T <: S) for S in POSSIBLE_TYPES)
-    error("""
-          Cannot override parsing for type $(T).
-          Possible types are $(POSSIBLE_TYPES).
-          """)
-  end
-    TRYPARSE_OVERRIDE[T] = true
-  end
+      error("""
+            Cannot override parsing for type $(T).
+            Possible types are $(POSSIBLE_TYPES).
+            """)
+    end
+    TRYPARSE_OVERRIDE[T] = fl
+    end
   nothing
 end
 

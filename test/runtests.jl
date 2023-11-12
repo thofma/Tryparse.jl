@@ -205,11 +205,104 @@ ParseError = Tryparse.ParseError
   
   @test get(Tryparse.TRYPARSE_OVERRIDE, Int, false) == false
   @test Tryparse.is_overridden(Int) == false
-  Tryparse.tryparse_override(Int)
+  Tryparse.tryparse_set_override(true, Int)
   @test Tryparse.TRYPARSE_OVERRIDE[Int] == true
-  @test Tryparse.is_overridden(Int) == true
-  @test_throws ErrorException Tryparse.tryparse_override(Array)
+  Tryparse.@unoverride Int
+  @test Tryparse.TRYPARSE_OVERRIDE[Int] == false
+  @test Tryparse.is_overridden(Int) == false
+  @test_throws ErrorException Tryparse.@override(Array)
   Tryparse.@override_base BigInt
   @test Base.tryparse(BigInt, "2^2") == 4
   Tryparse.@override_base 
 end
+
+# 
+
+_with_argparse = false
+
+push!(Base.LOAD_PATH, "@v#.#")
+
+try
+  using ArgParse
+  @info("Found ArgParse. Testing extension functionality")
+  global _with_argparse = true
+catch
+  @info("Did not find ArgParse.")
+end
+
+if _with_argparse
+  @testset "ArgParse" begin
+    @test_throws ArgParseError ArgParse.parse_item_wrapper(Matrix{Int}, "[1 2; 3 4]")
+    Tryparse.@override Matrix{Int}
+    ArgParse.parse_item_wrapper(Matrix{Int}, "[1 2; 3 4]") == [1 2; 3 4]
+    Tryparse.@unoverride Matrix{Int}
+    @test_throws ArgParseError ArgParse.parse_item_wrapper(Matrix{Int}, "[1 2; 3 4]")
+
+    @test_throws ArgParseError ArgParse.parse_item_wrapper(Int, "1+3-2")
+    Tryparse.@override Int
+    @test ArgParse.parse_item_wrapper(Int, "1+3-2") == 2
+    Tryparse.@unoverride
+    @test !Tryparse.is_overridden(Int)
+  end
+end
+
+try
+  using ArgMacros
+  @info("Found ArgMacros. Testing extension functionality")
+  global _with_argmacros = true
+catch
+  @info("Did not find ArgMacros.")
+end
+
+if _with_argmacros
+  @testset "ArgMacros" begin
+    ArgMacros._quit_try_help(message::String) = throw(ParseError(""))
+    @test_throws ParseError ArgMacros._converttype!(Matrix{Int}, "[1 2; 3 4]", "a")
+    Tryparse.@override Matrix{Int}
+    ArgMacros._converttype!(Matrix{Int}, "[1 2; 3 4]", "a") == [1 2; 3 4]
+    Tryparse.@unoverride Matrix{Int}
+    @test_throws ParseError ArgMacros._converttype!(Matrix{Int}, "[1 2; 3 4]", "a")
+
+    @test_throws ParseError ArgMacros._converttype!(Int, "1+3-2", "a")
+    Tryparse.@override Int
+    @test ArgMacros._converttype!(Int, "1+3-2", "a") == 2
+    Tryparse.@unoverride
+  end
+end
+
+try
+  using Nemo
+  @info("Found Nemo. Testing extension functionality")
+  global _with_nemo = true
+catch
+  @info("Did not find Nemo.")
+end
+
+if _with_nemo
+  @testset "Nemo" begin
+    x = tryparse(ZZRingElem, "10^50")
+    @test x isa ZZRingElem && x == big(10)^50
+
+    @test tryparse(ZZRingElem, "1//2") === nothing
+    @test_throws ParseError parse(ZZRingElem, "1//2")
+    @test tryparse(ZZRingElem, "1 + ") === nothing
+    @test_throws ParseError parse(ZZRingElem, "1 + ")
+    @test tryparse(ZZRingElem, "1 + (2 + 3") === nothing
+    @test_throws ParseError parse(ZZRingElem, "1 + (2 + 3")
+    @test tryparse(ZZRingElem, "sin(2)") === nothing
+    @test_throws ParseError parse(ZZRingElem, "sin(2)")
+
+    for (val, str) in [(1, "1"), (2, "1 + 1"), (-7, "1 - 2^3"), (5, "10//2"), (12, "2 * 3 * 2"), (3//4, "(3//2)//(2//1)")]
+      x = tryparse(QQFieldElem, str)
+      @test x isa QQFieldElem
+      @test x == val
+      y = parse(QQFieldElem, str)
+      @test y isa QQFieldElem
+      @test y == val
+    end
+
+    @test tryparse(QQFieldElem, "sin(2)") === nothing
+    @test_throws ParseError parse(QQFieldElem, "sin(2)")
+  end
+end
+
