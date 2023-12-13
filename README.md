@@ -115,6 +115,7 @@ Tryparse.@override             # will intercept all parsing
 
 <details>
     <summary>Example script.jl:</summary>
+
     ```julia
     using ArgParse, TryParse
 
