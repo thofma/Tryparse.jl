@@ -2,7 +2,7 @@
 
 ---
 
-*When all you want is just to parse stuff*
+*Parsing things that should be parsable without eval*
 
 ---
 
@@ -52,14 +52,14 @@ Table of supported types as well as allowed syntax.
 
 | Type     | Snytax | Example |
 -----------|--------|-----|
-| `<: Number` | Any arithmetic expression involving `^` | `Tryparse.tryparse(BigInt, "10^100") == big(10)^100` |
+| `<: Number` | Any arithmetic expression (including `^`) | `Tryparse.tryparse(BigInt, "10^100") == big(10)^100` |
 | `<: Tuple` | Expressions of the form `(...)` | `Tryparse.tryparse(Tuple{Int, Float64}, "(1, 1.2)" == (1, 1.2)` |
-| `<: Vector` | Expressions of the form `[...]` | `Tryparse.tryparse(Vector{Int}, "[2,1+1,3") == [2,2,3]` |
+| `<: Vector` | Expressions of the form `[...]` | `Tryparse.tryparse(Vector{Int}, "[2,1+1,3]") == [2,2,3]` |
 | `<: Matrix` | Expressions of the form `[...;...]` | `Tryparse.tryparse(Matrix{Int}, "[1 2; 3 4]") == [1 2; 3 4]` |
 | `<: UnitRange` | Expressions of the form `...:...` | `Tryparse.tryparse(UnitRange{Int}, "1:10") == 1:10` |
 | `<: StepRange` | Expressions of the form `...:...:...` | `Tryparse.tryparse(StepRange{Int}, "2:-1:-10") == 2:-1:-10` |
 
-the types can be nested arbitrarily:
+The types can be nested arbitrarily:
 
 ```julia
 julia> Tryparse.tryparse(Vector{Matrix{Int}}, "[[2 2; 3 1], [1 2; 3 4]]")
@@ -70,17 +70,17 @@ julia> Tryparse.tryparse(Vector{Matrix{Int}}, "[[2 2; 3 1], [1 2; 3 4]]")
 
 ## Notable difference to the REPL experience
 
-In almost all cases, executing `Tryparse.tryparse(T, x)` will yield the same result as entering `x` in the REPL and hitting enter. One situation where this is not the case are related to arithmetic expressions and overflow, since `Tryparse.tryparse` will always first parse all literal numbers and then evaluate the expression. For example:
+In almost all cases, executing `Tryparse.tryparse(T, x)` will yield the same result as entering `x` in the REPL and hitting enter. One situation, where this is not the case, is related to arithmetic expressions and overflow. The function `Tryparse.tryparse` will always first parse all literal numbers and then evaluate the expression. For example:
 
 ```julia
-julia> 2^64
+julia> BigInt(2^64)
 0
 
 julia> Tryparse.tryparse(BigInt, "2^64")
 18446744073709551616
 ```
 
-This choice of behavior is on purpose, see ....
+This choice of behavior is on purpose, to make working with command line arguments less painful.
 
 ## Command line argument parsing
 
@@ -101,3 +101,62 @@ and one can specifiy what the types of `arg1` and `arg2`. But this will work onl
 /path> julia script.jl --opt1=10^10 --opt2=[2,3]
 ```
 would not work, whereas this is possible with `Tryparse`.
+
+### ArgParse
+
+Enabling parsing of command line arguments is straight forward. Just add the following snippet to your script:
+
+```
+using Tryparse
+
+Tryparse.@override Int Float64 # will intercept parsing of Int and Float64
+Tryparse.@override             # will intercept all parsing
+```
+
+Short example script.jl:
+
+```julia
+using ArgParse, TryParse
+
+Tryparse.@override Int Matrix{Int}
+
+function parse_commandline()
+    s = ArgParseSettings()
+    @add_arg_table! s begin
+    "--opt1"
+        help = "an option with an argument"
+        arg_type = Int
+        default = 0
+    "--opt2", "-o"
+        help = "another option with an argument"
+        arg_type = Matrix{Int}
+        default = [0 0; 0 0]
+    end
+    return parse_args(s)
+end
+
+function main()
+    parsed_args = parse_commandline()
+    println("Parsed args:")
+    for (arg,val) in parsed_args
+        println("  $arg  =>  $val, $(typeof(val))")
+    end
+end
+main()
+```
+
+Executing `julia script.jl --opt1="1+2^10" --opt2="[1 2; 3 4]"` yields:
+```bash
+bla@home> julia script.jl --opt1="1+2^10" --opt2="[1 2; 3 4]"
+Parsed args:
+  opt1  =>  1025, Int64
+  opt2  =>  [1 2; 3 4], Matrix{Int64}
+```
+
+### 
+
+## FAQ
+
+### Does this package use `eval`?
+
+No. This is certified to be a `eval`free.
