@@ -113,37 +113,38 @@ Tryparse.@override Int Float64 # will intercept parsing of Int and Float64
 Tryparse.@override             # will intercept all parsing
 ```
 
-Short example script.jl:
+<details>
+    <summary>Example script.jl:</summary>
+    ```julia
+    using ArgParse, TryParse
 
-```julia
-using ArgParse, TryParse
+    Tryparse.@override Int Matrix{Int}
 
-Tryparse.@override Int Matrix{Int}
-
-function parse_commandline()
-    s = ArgParseSettings()
-    @add_arg_table! s begin
-    "--opt1"
-        help = "an option with an argument"
-        arg_type = Int
-        default = 0
-    "--opt2", "-o"
-        help = "another option with an argument"
-        arg_type = Matrix{Int}
-        default = [0 0; 0 0]
+    function parse_commandline()
+        s = ArgParseSettings()
+        @add_arg_table! s begin
+        "--opt1"
+            help = "an option with an argument"
+            arg_type = Int
+            default = 0
+        "--opt2", "-o"
+            help = "another option with an argument"
+            arg_type = Matrix{Int}
+            default = [0 0; 0 0]
+        end
+        return parse_args(s)
     end
-    return parse_args(s)
-end
 
-function main()
-    parsed_args = parse_commandline()
-    println("Parsed args:")
-    for (arg,val) in parsed_args
-        println("  $arg  =>  $val, $(typeof(val))")
+    function main()
+        parsed_args = parse_commandline()
+        println("Parsed args:")
+        for (arg,val) in parsed_args
+            println("  $arg  =>  $val, $(typeof(val))")
+        end
     end
-end
-main()
-```
+    main()
+    ```
+</details>
 
 Executing `julia script.jl --opt1="1+2^10" --opt2="[1 2; 3 4]"` yields:
 ```bash
