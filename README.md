@@ -15,16 +15,16 @@
 
 #### Table of contents
 
-- [Synopsis](https://github.com/thofma/Tryparse.jl#synopsis)
-- [Installation](https://github.com/thofma/Tryparse.jl#installation)
-- [Usage](https://github.com/thofma/Tryparse.jl#usage)
-- [Notable difference to the REPL experience](https://github.com/thofma/Tryparse.jl#notable-difference-to-the-repl-experience)
-- [Command line argument parsing](https://github.com/thofma/Tryparse.jl#command-line-argument-parsing)
-  - [ArgParse](https://github.com/thofma/Tryparse.jl#argparse)
-  - [ArgMacros](https://github.com/thofma/Tryparse.jl#argmacros)
-  - [Comonicon](https://github.com/thofma/Tryparse.jl#comonicon)
-- [FAQ](https://github.com/thofma/Tryparse.jl#faq)
-  - [Does this package use eval?](https://github.com/thofma/Tryparse.jl#does-this-package-use-eval)
+- [Synopsis](#synopsis)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Notable difference to the REPL experience](#notable-difference-to-the-repl-experience)
+- [Command line argument parsing](#command-line-argument-parsing)
+  - [ArgParse](#argparse)
+  - [ArgMacros](#argmacros)
+  - [Comonicon](#comonicon)
+- [FAQ](https://github.com/thofma/#faq)
+  - [Does this package use eval?](#does-this-package-use-eval)
 
 
 ## Synopsis
