@@ -1,7 +1,7 @@
 name = "Tryparse"
 uuid = "7b412df5-33c1-4334-b65f-95ccdd546b1c"
 authors = ["Tommy Hofmann <thofma@gmail.com>"]
-version = "0.1.0-DEV"
+version = "0.1.0"
 
 [deps]
 PackageExtensionCompat = "65ce6f38-6b18-4e1d-a461-8949797d7930"
