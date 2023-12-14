@@ -52,7 +52,7 @@ Table of supported types as well as allowed syntax.
 
 | Type     | Snytax | Example |
 -----------|--------|-----|
-| `<: Number` | Any arithmetic expression (including `^`) | `Tryparse.tryparse(BigInt, "10^100") == big(10)^100` |
+| `<: Number` | Any arithmetic expression (may contain `^`) | `Tryparse.tryparse(BigInt, "10^100") == big(10)^100` |
 | `<: Tuple` | Expressions of the form `(...)` | `Tryparse.tryparse(Tuple{Int, Float64}, "(1, 1.2)" == (1, 1.2)` |
 | `<: Vector` | Expressions of the form `[...]` | `Tryparse.tryparse(Vector{Int}, "[2,1+1,3]") == [2,2,3]` |
 | `<: Matrix` | Expressions of the form `[...;...]` | `Tryparse.tryparse(Matrix{Int}, "[1 2; 3 4]") == [1 2; 3 4]` |
@@ -84,27 +84,27 @@ This choice of behavior is on purpose, to make working with command line argumen
 
 ## Command line argument parsing
 
-Situations where one needs to parse strings as julia objects are interaction with external ressources, like parsing of command line arguments. Command line scripts are invokved in the form
+The reason this package exists is parsing of command line arguments for julia scripts. Command line scripts are invokved in the form
 
 ```bash
-/path> julia script.jl arg1 arg2
+bla@home> julia script.jl arg1 arg2
 ```
 
-In this situation, inside `script.jl` are available only as strings and thus need to be processed. Here is where `Tryparse.tryparse` comes into play.
+In this situation, inside `script.jl`, the arguments are available only as strings and thus need to be processed. Here is where `Tryparse.tryparse` comes into play.
 
 Similarly, if one uses Argparse or Comonicon.jl (both packages are highly recommended!), this looks like
 ```bash
-/path> julia script.jl --opt1=arg1 --opt2=arg2
+bla@home> julia script.jl --opt1=arg1 --opt2=arg2
 ```
 and one can specifiy what the types of `arg1` and `arg2`. But this will work only for types and strings, for which `Base.tryparse` respectively `Base.parse` works. For example, out of the box
 ```bash
-/path> julia script.jl --opt1=10^10 --opt2=[2,3]
+bla@home> julia script.jl --opt1="10^10" --opt2="[2, 3]"
 ```
-would not work, whereas this is possible with `Tryparse`.
+would not work, whereas this is possible with `Tryparse`. We illustrate how to use `Tryparse` together with `ArgParse`, `ArgMacros` and `Comonicon`.
 
 ### ArgParse
 
-Enabling parsing of command line arguments is straight forward. Just add the following snippet to your script:
+Enabling parsing of command line arguments is straight forward. Just add (one of) the following lines to your script:
 
 ```
 using Tryparse
@@ -114,7 +114,7 @@ Tryparse.@override             # will intercept all parsing
 ```
 
 <details>
-<summary>Example script.jl:</summary>
+<summary>Example `script_tryparse.jl`:</summary>
 
 ```julia
 using ArgParse, TryParse
@@ -147,18 +147,82 @@ main()
 ```
 </details>
 
-Executing `julia script.jl --opt1="1+2^10" --opt2="[1 2; 3 4]"` yields:
+Executing this yields:
 ```bash
-bla@home> julia script.jl --opt1="1+2^10" --opt2="[1 2; 3 4]"
+bla@home> julia script_tryparse.jl --opt1="1+2^10" --opt2="[1 2; 3 4]"
 Parsed args:
   opt1  =>  1025, Int64
   opt2  =>  [1 2; 3 4], Matrix{Int64}
 ```
 
-### 
+### ArgMacros
+
+<details>
+<summary>Example `script_argmacros.jl`:</summary>
+
+```julia
+using ArgMacros, Tryparse
+
+Tryparse.@override Int Float64
+
+function main()
+    @inlinearguments begin
+        @positionalrequired Int x
+        @positionaloptional Float64 z
+    end
+
+    println(x, " ", typeof(x))
+    println(z, " ", typeof(z))
+end
+
+main()
+```
+</details>
+
+Executing this yields:
+```bash
+bla@home> julia script_argmacros.jl "1+2^10" "1.1^2"
+1025 Int64
+1.2100000000000002 Float64
+```
+
+### Comonicon
+
+Enabling parsing of command line arguments for Comonicon is a bit more brittle. To do this, we invoke `Tryparse.@override_base`. Note that this overrides the behavior of `Base.parse` and does not work for `Float64`.
+
+```
+using Tryparse
+
+Tryparse.@override_base_base Matrix{Int} BigInt # will intercept parsing of Matrix{Int} and BigInt
+```
+
+<details>
+<summary>Example `script_comonicon.jl`:</summary>
+
+```julia
+using Comonicon, Tryparse
+
+Tryparse.@override_base Matrix{Int} BigInt
+
+@main function main(; opt1::Matrix{Int}=[0 0; 0 0],
+opt2::BigInt=big(2))
+    println("Parsed args:")
+    println("opt1=>", opt1)
+    println("opt2=>", opt2)
+end
+```
+</details>
+
+Executing this yields:
+```bash
+bla@home> julia script_comonicon.jl --opt1="[1 2; 3 4]" --opt2="2^100"
+Parsed args:
+opt1=>[1 2; 3 4]
+opt2=>1267650600228229401496703205376
+```
 
 ## FAQ
 
 ### Does this package use `eval`?
 
-No. This is certified to be a `eval`free.
+No. This is certified to be a `eval`-free.
