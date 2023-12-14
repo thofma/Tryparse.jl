@@ -15,6 +15,18 @@
 
 #### Table of contents
 
+- [Synopsis](https://github.com/thofma/Tryparse.jl#synopsis)
+- [Installation](https://github.com/thofma/Tryparse.jl#installation)
+- [Usage](https://github.com/thofma/Tryparse.jl#usage)
+- [Notable difference to the REPL experience](https://github.com/thofma/Tryparse.jl#notable-difference-to-the-repl-experience)
+- [Command line argument parsing](https://github.com/thofma/Tryparse.jl#command-line-argument-parsing)
+  - [ArgParse](https://github.com/thofma/Tryparse.jl#argparse)
+  - [ArgMacros](https://github.com/thofma/Tryparse.jl#argmacros)
+  - [Comonicon](https://github.com/thofma/Tryparse.jl#comonicon)
+- [FAQ](https://github.com/thofma/Tryparse.jl#faq)
+  - [Does this package use eval?](https://github.com/thofma/Tryparse.jl#does-this-package-use-eval)
+
+
 ## Synopsis
 
 When working interactively or interacting with other sources of data, one can find oneself in a situation, where one needs to construct Julia objects from a given string. While this is in general a hard problem, in practice it is more managable, as the types are restricted to a small set, including numbers, arrays or tuples. For number types `Base.tryparse` provides this functionality, as long as the string is a literal interger.
