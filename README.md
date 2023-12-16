@@ -40,6 +40,8 @@ julia> Tryparse.tryparse(Int, "2 + 3^2 - 2 * 3")
 5
 ```
 
+The package has a seamless integration with ArgParse.jl, ArgMacros.jl and Comonicon.jl to allow for ergonomic command line argument parsing.
+
 ## Installation
 
 Since Tryparse.jl is a registered package, it can be simply installed as follows:
@@ -104,7 +106,7 @@ bla@home> julia script.jl arg1 arg2
 
 In this situation, inside `script.jl`, the arguments are available only as strings and thus need to be processed. Here is where `Tryparse.tryparse` comes into play.
 
-Similarly, if one uses Argparse or Comonicon.jl (both packages are highly recommended!), this looks like
+Similarly, if one uses ArgParse.jl, ArgMacros.jl or Comonicon.jl (those packages are highly recommended!), this looks like
 ```bash
 bla@home> julia script.jl --opt1=arg1 --opt2=arg2
 ```
@@ -112,17 +114,18 @@ and one can specifiy what the types of `arg1` and `arg2`. But this will work onl
 ```bash
 bla@home> julia script.jl --opt1="10^10" --opt2="[2, 3]"
 ```
-would not work, whereas this is possible with `Tryparse`. We illustrate how to use `Tryparse` together with `ArgParse`, `ArgMacros` and `Comonicon`.
+would not work, whereas this is possible with `Tryparse`. We illustrate how to use `Tryparse` together with [ArgParse.jl](https://github.com/carlobaldassi/ArgParse.jl), [ArgMacros.jl](https://github.com/zachmatson/ArgMacros.jl) and [Comonicon.jl](https://github.com/comonicon/Comonicon.jl).
 
 ### ArgParse
 
-Enabling parsing of command line arguments is straight forward. Just add (one of) the following lines to your script:
+Enabling parsing of command line arguments is straight forward for ArgParse.jl. Just add (one of) the following lines to your script:
 
 ```
+using ArgParse
 using Tryparse
 
-Tryparse.@override Int Float64 # will intercept parsing of Int and Float64
-Tryparse.@override             # will intercept all parsing
+Tryparse.@override Int Float64 # will intercept command line argument parsing of Int and Float64
+Tryparse.@override             # will intercept all command line argument parsing
 ```
 
 <details>
@@ -169,6 +172,16 @@ Parsed args:
 
 ### ArgMacros
 
+Enabling parsing of command line arguments is straight forward for ArgMacros.jl. Just add (one of) the following lines to your script:
+
+```
+using ArgParse
+using Tryparse
+
+Tryparse.@override Int Float64 # will intercept command line argument parsing of Int and Float64
+Tryparse.@override             # will intercept all command line argument parsing
+```
+
 <details>
 <summary>Example `script_argmacros.jl`:</summary>
 
@@ -203,9 +216,10 @@ bla@home> julia script_argmacros.jl "1+2^10" "1.1^2"
 Enabling parsing of command line arguments for Comonicon is a bit more brittle. To do this, we invoke `Tryparse.@override_base`. Note that this overrides the behavior of `Base.parse` and does not work for `Float64`.
 
 ```
+using Comonicon
 using Tryparse
 
-Tryparse.@override_base_base Matrix{Int} BigInt # will intercept parsing of Matrix{Int} and BigInt
+Tryparse.@override_base_base Matrix{Int} BigInt # will intercept command line parsing of Matrix{Int} and BigInt
 ```
 
 <details>
