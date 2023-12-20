@@ -40,7 +40,7 @@ julia> Tryparse.tryparse(Int, "2 + 3^2 - 2 * 3")
 5
 ```
 
-The package has a seamless integration with ArgParse.jl, ArgMacros.jl and Comonicon.jl to allow for ergonomic command line argument parsing. See (#command-line-argument-parsing) for details.
+The package has a seamless integration with ArgParse.jl, ArgMacros.jl and Comonicon.jl to allow for ergonomic command line argument parsing. See [here](#command-line-argument-parsing) for details.
 
 ## Installation
 
