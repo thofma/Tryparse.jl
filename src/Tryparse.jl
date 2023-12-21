@@ -92,8 +92,14 @@ function _tryparse(::Type{Vector{T}}, ex, maythrow = true) where {T}
   if ex isa Expr
     if ex.head === :vect
       return T[_tryparse(T, a, maythrow) for a in ex.args]
+    elseif ex.head === :vcat
+      return reduce(vcat, [_tryparse(Vector{T}, a, maythrow) for a in ex.args])
     elseif ex.head === :comprehension
       maythrow && throw(ParseError("List comprehension not supported."))
+    elseif ex.head === :call && ex.args[1] === :(:) && length(ex.args) == 3
+      return collect(_tryparse(UnitRange{T}, ex, maythrow))
+    elseif ex.head === :call && ex.args[1] === :(:) && length(ex.args) == 4
+      return collect(_tryparse(StepRange{T}, ex, maythrow))
     end
   end
   maythrow && throw(ParseError("Unkown syntax for vector construction. Please use \"[...]\"."))

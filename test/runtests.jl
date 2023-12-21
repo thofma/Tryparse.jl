@@ -84,6 +84,16 @@ ParseError = Tryparse.ParseError
   x = tryparse(Vector{BigInt}, "[1,2^100]")
   @test x isa Vector{BigInt} && x == [1, big(2)^100]
 
+  x = tryparse(Vector{Int}, "[1:2; 6:9]")
+  @test x isa Vector{Int} && x == [1:2; 6:9]
+  x = parse(Vector{Int}, "[1:2; 6:9]")
+  @test x isa Vector{Int} && x == [1:2; 6:9]
+
+  x = tryparse(Vector{Int}, "[3:-1:1; 1:1]")
+  @test x isa Vector{Int} && x == [3:-1:1; 1:1]
+  x = parse(Vector{Int}, "[3:-1:1; 1:1]")
+  @test x isa Vector{Int} && x == [3:-1:1; 1:1]
+
   @test tryparse(Vector{Int}, "1") === nothing
   @test_throws ParseError parse(Vector{Int}, "1")
   @test tryparse(Vector{Int}, "[1,2") === nothing
