@@ -4,6 +4,11 @@ using Tryparse
 
 isdefined(Base, :get_extension) ? (using Nemo) : (using ..Nemo)
 
+if !isdefined(Nemo, :fmpz)
+  const fmpz = ZZRingElem
+  const fmpq = QQFieldElem
+end
+
 function Tryparse._tryparse(::Type{fmpz}, ex, x)
   y = Tryparse._tryparse(BigInt, ex, x)
   if !(y isa BigInt) || (y === nothing)
